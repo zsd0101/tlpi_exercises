@@ -45,14 +45,20 @@ int main(int argc, char *argv[])
 						break;
 					}
 				}
-				
+			}
+			
+			if( (i-tmpbuf_cp_num) > 0 )
+			{
 				if(write(dstfile_fd, &tmpbuf[tmpbuf_cp_num], i-tmpbuf_cp_num) != (i-tmpbuf_cp_num))
 			    {
 			        fprintf(stderr,"write to dst file %s failed: %s\n", argv[2], strerror(errno));
 			        exit(EXIT_FAILURE);
 			    }
 			    tmpbuf_cp_num += i-tmpbuf_cp_num;
+			}
 
+            if(j > 0)
+			{
 				/* now we have j bytes hole '0\', make a hole! */
 				if( lseek(dstfile_fd, j, SEEK_CUR) == -1 )
 		        {

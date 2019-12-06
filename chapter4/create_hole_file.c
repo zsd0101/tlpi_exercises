@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_DATA_NUM 10
+#define MAX_DATA_NUM 7
 int main(int argc, char * argv[])
 {
 	int file1_fd, file2_fd; 
