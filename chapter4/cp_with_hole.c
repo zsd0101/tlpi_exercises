@@ -15,7 +15,8 @@ int main(int argc, char *argv[])
 	int numread, numwrite;
 	char tmpbuf[MAX_READ_NUM + 1];
 	int i,j;
-	int tmpbuf_cp_num;
+	int valid_data_size;
+	int hole_size;
 	
 	srcfile_fd = open(argv[1], O_RDONLY);
 	if(srcfile_fd == -1)
@@ -33,41 +34,43 @@ int main(int argc, char *argv[])
 	
 	while( (numread = read(srcfile_fd, tmpbuf, MAX_READ_NUM)) > 0)
 	{
-		tmpbuf_cp_num = 0;
-		for(i = 0; i < numread; i++)
-		{		
-			if('\0' == tmpbuf[i])
+		while(i < numread)
+		{
+			for(j = i; j < numread; j++)
 			{
-				for(j = 0; j < (numread-i); j++) /* count the number of consecutive '\0'.(if the '0\' is not hole, this function could not figure out the difference)*/
+				if(tmpbuf[j] == '\0')
 				{
-					if('\0' != tmpbuf[i + j])
-					{
-						break;
-					}
+					break;
 				}
 			}
-			
-			if( (i-tmpbuf_cp_num) > 0 )
+
+			valid_data_size = j-i;
+			if( valid_data_size > 0 )
 			{
-				if(write(dstfile_fd, &tmpbuf[tmpbuf_cp_num], i-tmpbuf_cp_num) != (i-tmpbuf_cp_num))
+				if( write(dstfile_fd, &tmpbuf[i], valid_data_size) != valid_data_size )
 			    {
 			        fprintf(stderr,"write to dst file %s failed: %s\n", argv[2], strerror(errno));
 			        exit(EXIT_FAILURE);
 			    }
-			    tmpbuf_cp_num += i-tmpbuf_cp_num;
+			}
+			
+			for(i=j; i < numread; i++) /* count the number of consecutive '\0'.*/
+			{
+				if(tmpbuf[i] != '\0')
+				{
+					break;
+				}
 			}
 
-            if(j > 0)
+			hole_size = i-j;
+			if(hole_size > 0)
 			{
-				/* now we have j bytes hole '0\', make a hole! */
-				if( lseek(dstfile_fd, j, SEEK_CUR) == -1 )
+				/* now we have hole_size bytes hole '0\', make a hole! */
+				if( lseek(dstfile_fd, hole_size, SEEK_CUR) == -1 )
 		        {
 			        fprintf(stderr,"lseek dst file %s failed: %s\n", argv[2], strerror(errno));
 			        exit(EXIT_FAILURE);
 		        }
-				tmpbuf_cp_num += j;
-				
-				i += j;
 			}
 		}
 	}
